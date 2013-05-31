@@ -265,6 +265,8 @@ ngx_http_memc_create_get_cmd_request(ngx_http_request_t *r)
     ngx_http_memc_ctx_t            *ctx;
     ngx_http_variable_value_t      *vv;
 
+    htrace("xxxxxx");
+
     ctx = ngx_http_get_module_ctx(r, ngx_http_memc_module);
 
     vv = ctx->memc_key_vv;
@@ -275,17 +277,21 @@ ngx_http_memc_create_get_cmd_request(ngx_http_request_t *r)
         return NGX_ERROR;
     }
 
+    htrace("vv=[%s]", vv->data);
     escape = 2 * ngx_escape_uri(NULL, vv->data, vv->len, NGX_ESCAPE_MEMCACHED);
 
     len = sizeof("get ") - 1 + vv->len + escape + sizeof(CRLF) - 1;
+    htrace("len=%lu vv=[%s]", len, vv->data);
 
     b = ngx_create_temp_buf(r->pool, len);
     if (b == NULL) {
+        htrace("xxxxxx");
         return NGX_ERROR;
     }
 
     cl = ngx_alloc_chain_link(r->pool);
     if (cl == NULL) {
+    htrace("xxxxxx");
         return NGX_ERROR;
     }
 
@@ -312,6 +318,8 @@ ngx_http_memc_create_get_cmd_request(ngx_http_request_t *r)
                    "http memcached request: \"%V\"", &ctx->key);
 
     *b->last++ = CR; *b->last++ = LF;
+
+    htrace("cmd:[%s]", b->start);
 
     ctx->parser_state = NGX_ERROR;
 

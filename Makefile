@@ -1,5 +1,9 @@
 
-NGINXHOME=../nginx-1.4.1
+
+MODULE_DIR=$(shell pwd)
+NGINX_BINARY=$(NGINXHOME)/objs/nginx
+NGINX_MAKEFILE=$(NGINXHOME)/Makefile
+NGINXHOME=$(MODULE_DIR)/../nginx-1.4.1
 NGINX_BIN_INSTALL=$(NGINXHOME)/nginx
 
 
@@ -23,10 +27,6 @@ LDFLAGS=
 CC=gcc
 CXX=g++
 
-MODULE_DIR=$(shell pwd)
-NGINX_BINARY=$(NGINXHOME)/objs/nginx
-NGINX_MAKEFILE=$(NGINXHOME)/Makefile
-
 all : $(NGINX_MAKEFILE) $(NGINX_BINARY)
 	cp $(NGINX_BINARY) .
 
@@ -43,9 +43,9 @@ $(TARGET_LIB) : $(ENGINE_OBJS)
 	tar zcf $(TARGET_LIB_TAR) $(TARGET_LIB_FULL_NAME) $(TARGET_LIB_MAJOR_NAME) $(TARGET_LIB) 
 
 $(NGINX_MAKEFILE) : config  
-	cd $(NGINXHOME); ./configure --prefix=$(NGINX_BIN_INSTALL) --add-module=$(MODULE_DIR) 
+	cd $(NGINXHOME); ./configure --prefix=$(NGINX_BIN_INSTALL) --add-module=$(MODULE_DIR) --with-debug
 
-$(NGINX_BINARY) : 
+$(NGINX_BINARY) : src/ngx_http_memc_module.c src/ngx_http_memc_request.c src/ngx_http_memc_response.c src/ngx_http_memc_util.c src/ngx_http_memc_handler.c
 	$(MAKE) -j -C $(NGINXHOME)
 	$(MAKE) install -C $(NGINXHOME)
 

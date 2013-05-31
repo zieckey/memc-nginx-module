@@ -1,6 +1,8 @@
 #ifndef DDEBUG_H
 #define DDEBUG_H
 
+#include "dcommon.h"
+
 #include <ngx_core.h>
 
 #if defined(DDEBUG) && (DDEBUG)
