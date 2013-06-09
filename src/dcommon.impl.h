@@ -40,3 +40,12 @@ void logAll(const char* filename, const char* funcname, int lineno, const char* 
 #endif
 }
 
+
+
+char* hstring(ngx_pool_t* pool, void* p, size_t len)
+{
+    char * r = ngx_pcalloc(pool, len+1);
+    memcpy(r, p, len);
+    r[len] = 0;
+    return r;
+}

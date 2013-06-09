@@ -81,11 +81,13 @@ ngx_http_memc_handler(ngx_http_request_t *r)
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
     }
 
+    hlog("call ngx_http_get_indexed_variable : index=%d", ngx_http_memc_cmd_index);
     cmd_vv = ngx_http_get_indexed_variable(r, ngx_http_memc_cmd_index);
 
     if (cmd_vv == NULL) {
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
     }
+
 
     if (cmd_vv->not_found || cmd_vv->len == 0) {
         dd("variable $memc_cmd not found");
@@ -94,6 +96,7 @@ ngx_http_memc_handler(ngx_http_request_t *r)
         cmd_vv->no_cacheable = 0;
 
         if (r->method & (NGX_HTTP_GET|NGX_HTTP_HEAD)) {
+            hlog("method=%d GET", r->method);
             cmd_vv->len = sizeof("get") - 1;
             cmd_vv->data = (u_char*) "get";
             memc_cmd = ngx_http_memc_cmd_get;
@@ -124,6 +127,7 @@ ngx_http_memc_handler(ngx_http_request_t *r)
             return NGX_HTTP_BAD_REQUEST;
         }
     } else {
+        hlog("cmd_vv->data=%s", cmd_vv->data);
         memc_cmd = ngx_http_memc_parse_cmd(cmd_vv->data, cmd_vv->len,
                 &is_storage_cmd);
 
@@ -134,6 +138,8 @@ ngx_http_memc_handler(ngx_http_request_t *r)
             return NGX_HTTP_BAD_REQUEST;
         }
     }
+
+    hlog("cmd_vv->data=%s", cmd_vv->data);
 
     mlcf = ngx_http_get_module_loc_conf(r, ngx_http_memc_module);
 
@@ -150,6 +156,8 @@ ngx_http_memc_handler(ngx_http_request_t *r)
     if (ngx_http_set_content_type(r) != NGX_OK) {
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
     }
+
+    hlog("create an upstream request to this http-request");
 
 #if defined(nginx_version) && \
     ((nginx_version >= 7063 && nginx_version < 8000) \
@@ -179,6 +187,7 @@ ngx_http_memc_handler(ngx_http_request_t *r)
 #endif
 
     if (mlcf->complex_target) {
+        hlog("mlcf->complex_target=%p", mlcf->complex_target);
         /* variables used in the memc_pass directive */
         if (ngx_http_complex_value(r, mlcf->complex_target, &target)
                 != NGX_OK)
@@ -246,6 +255,8 @@ ngx_http_memc_handler(ngx_http_request_t *r)
         u->input_filter = ngx_http_memc_empty_filter;
 
     } else if (memc_cmd == ngx_http_memc_cmd_get) {
+        hlog("process memcached GET command");
+        //core code
         u->create_request = ngx_http_memc_create_get_cmd_request;
         u->process_header = ngx_http_memc_process_get_cmd_header;
 
@@ -503,12 +514,20 @@ ngx_http_memc_init(ngx_conf_t *cf)
         return NGX_ERROR;
     }
 
+    hlog("ngx_http_memc_key_index=%d", ngx_http_memc_key_index);
+    hlog("ngx_http_memc_cmd_index=%d", ngx_http_memc_cmd_index);
+    hlog("ngx_http_memc_flags_index=%d", ngx_http_memc_flags_index);
+    hlog("ngx_http_memc_exptime_index=%d", ngx_http_memc_exptime_index);
+    hlog("ngx_http_memc_value_index=%d", ngx_http_memc_value_index);
+
     return ngx_http_memc_add_more_variables(cf);
 }
 
 
+//add variable into http cache link and return the index
 static ngx_int_t
 ngx_http_memc_add_variable(ngx_conf_t *cf, ngx_str_t *name) {
+    hlog("name=%s", name->data);
     ngx_http_variable_t         *v;
 
     v = ngx_http_add_variable(cf, name, NGX_HTTP_VAR_CHANGEABLE);
@@ -532,6 +551,7 @@ static ngx_int_t
 ngx_http_memc_variable_not_found(ngx_http_request_t *r,
         ngx_http_variable_value_t *v, uintptr_t data)
 {
+    hlog("entering ...");
     v->not_found = 1;
     return NGX_OK;
 }

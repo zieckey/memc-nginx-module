@@ -9,6 +9,10 @@
 #include <stdarg.h>
 
 
+#include <ngx_core.h>
+#include <ngx_http.h>
+#include <ngx_palloc.h>
+
 void logAll(const char* filename, const char* funcname, int lineno, const char* fmt, ... );
 
     //#define LogTrace(fmt, args...) { if (FLAGS_runlog <= 0) logAll(__FILE__, "TRACE", __LINE__, fmt, ##args ); }
@@ -17,9 +21,11 @@ void logAll(const char* filename, const char* funcname, int lineno, const char* 
     //#define LogWarn(fmt, args...)  { if (FLAGS_runlog <= 3) logAll(__FILE__, "WARN ", __LINE__, fmt, ##args ); }
     //#define LogError(fmt, args...) { if (FLAGS_runlog <= 4) logAll(__FILE__, "ERROR", __LINE__, fmt, ##args ); }
 
-#ifndef htrace
-    #define htrace(fmt, args...) logAll(__FILE__, __func__, __LINE__, fmt, ##args )
+#ifndef hlog
+    #define hlog(fmt, args...) logAll(__FILE__, __func__, __LINE__, fmt, ##args )
 #endif
+
+char* hstring(ngx_pool_t* pool, void* p, size_t len);
 
 #endif
 

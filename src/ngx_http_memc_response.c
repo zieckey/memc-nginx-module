@@ -370,17 +370,18 @@ ngx_http_memc_empty_filter(void *data, ssize_t bytes)
 ngx_int_t
 ngx_http_memc_get_cmd_filter_init(void *data)
 {
+    hlog("entering ...");
     ngx_http_memc_ctx_t  *ctx = data;
 
     ngx_http_upstream_t  *u;
 
     u = ctx->request->upstream;
 
-    dd("filter init: u->length: %d", (int) u->length);
+    hlog("filter init: u->length: %d", (int) u->length);
 
     u->length += NGX_HTTP_MEMC_END;
 
-    dd("filter init (2): u->length: %d", (int) u->length);
+    hlog("filter init (2): u->length: %d", (int) u->length);
 
     return NGX_OK;
 }
@@ -388,7 +389,7 @@ ngx_http_memc_get_cmd_filter_init(void *data)
 
 ngx_int_t
 ngx_http_memc_get_cmd_filter(void *data, ssize_t bytes)
-{
+{ hlog("entering ...");
     ngx_http_memc_ctx_t  *ctx = data;
 
     u_char               *last;
@@ -398,7 +399,7 @@ ngx_http_memc_get_cmd_filter(void *data, ssize_t bytes)
 
     u = ctx->request->upstream;
     b = &u->buffer;
-
+    char cpybuf[1024] = {0}; memcpy(cpybuf, u->buffer.pos, u->buffer.last - u->buffer.pos); hlog("upstream->buffer->pos=[%s], buflength=%lu", cpybuf, strlen(cpybuf));
     if (u->length == ctx->rest) {
 
         if (ngx_strncmp(b->last,
@@ -489,7 +490,7 @@ ngx_http_memc_get_cmd_filter(void *data, ssize_t bytes)
 
 ngx_int_t
 ngx_http_memc_process_get_cmd_header(ngx_http_request_t *r)
-{
+{ hlog("entering ...");
     ngx_http_memc_loc_conf_t        *conf;
     u_char                          *p, *len;
     ngx_str_t                        line;
@@ -499,10 +500,10 @@ ngx_http_memc_process_get_cmd_header(ngx_http_request_t *r)
 
     u = r->upstream;
 
-    dd("process header: u->length: %u", (unsigned) u->length);
+    hlog("process header: u->length: %u", (unsigned)(u->buffer.last - u->buffer.pos));
 
     for (p = u->buffer.pos; p < u->buffer.last; p++) {
-        if (*p == LF) {
+        if (*p == LF) { hlog("found LF : response : [%s]", hstring(r->pool, u->buffer.pos, (unsigned) (u->buffer.last - u->buffer.pos)));
             goto found;
         }
     }

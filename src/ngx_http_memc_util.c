@@ -8,6 +8,7 @@
 ngx_http_memc_cmd_t
 ngx_http_memc_parse_cmd(u_char *data, size_t len, ngx_flag_t *is_storage_cmd)
 {
+    hlog("data=%s", (char*)data);
     switch (len) {
         case 3:
             if (ngx_http_memc_strcmp_const(data, "set") == 0) {

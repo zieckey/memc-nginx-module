@@ -7,7 +7,7 @@ NGINXHOME=$(MODULE_DIR)/../nginx-1.4.1
 NGINX_BIN_INSTALL=$(NGINXHOME)/nginx
 
 
-DEUBG_FLAGS=-DNDEBUG -g3 -O3
+DEUBG_FLAGS=-DNDEBUG -g3 
 CFLAGS=$(DEUBG_FLAGS) -DH_ENABLE_QLOG -fPIC -pipe -c \
 		-Wshadow -Wcast-align -Wwrite-strings -Wsign-compare \
 		-Winvalid-pch -fms-extensions -Woverloaded-virtual -Wsign-promo \
@@ -46,7 +46,7 @@ $(NGINX_MAKEFILE) : config
 	cd $(NGINXHOME); ./configure --prefix=$(NGINX_BIN_INSTALL) --add-module=$(MODULE_DIR) --with-debug
 
 $(NGINX_BINARY) : src/ngx_http_memc_module.c src/ngx_http_memc_request.c src/ngx_http_memc_response.c src/ngx_http_memc_util.c src/ngx_http_memc_handler.c
-	$(MAKE) -j -C $(NGINXHOME)
+	$(MAKE) CFLAGS=" -pipe -W -Wall -Wpointer-arith -Wno-unused-parameter -Werror -g" -j -C $(NGINXHOME)
 	$(MAKE) install -C $(NGINXHOME)
 
 -include $(DEPS)

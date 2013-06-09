@@ -3,7 +3,6 @@
 #endif
 #include "ddebug.h"
 
-#include "dcommon.impl.h"
 
 /*
  * Copyright (C) Igor Sysoev
@@ -21,6 +20,8 @@
 #include <ngx_core.h>
 #include <ngx_http.h>
 #include <nginx.h>
+
+#include "dcommon.impl.h"
 
 static void *ngx_http_memc_create_loc_conf(ngx_conf_t *cf);
 static char *ngx_http_memc_merge_loc_conf(ngx_conf_t *cf,
@@ -251,7 +252,7 @@ ngx_http_memc_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child)
 static char *
 ngx_http_memc_pass(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 {
-    htrace("entering ...");
+    hlog("entering ...");
     ngx_http_memc_loc_conf_t  *mlcf = conf;
 
     ngx_str_t                 *value;
@@ -269,6 +270,7 @@ ngx_http_memc_pass(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
     clcf->handler = ngx_http_memc_handler;
 
+    hlog("clcf->name=%s", clcf->name.data);
     if (clcf->name.data[clcf->name.len - 1] == '/') {
         clcf->auto_redirect = 1;
     }
@@ -277,6 +279,7 @@ ngx_http_memc_pass(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
     value = cf->args->elts;
 
+    hlog("%s value=%s %s ", clcf->name.data, value[0].data, value[1].data);
     n = ngx_http_script_variables_count(&value[1]);
     if (n) {
         mlcf->complex_target = ngx_palloc(cf->pool,
@@ -304,11 +307,16 @@ ngx_http_memc_pass(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     url.url = value[1];
     url.no_resolve = 1;
 
+    hlog("url.url=%s", url.url.data);
+    hlog("url.port=%d", url.port);
     mlcf->upstream.upstream = ngx_http_upstream_add(cf, &url, 0);
     if (mlcf->upstream.upstream == NULL) {
         return NGX_CONF_ERROR;
     }
-
+    hlog("after ngx_http_upstream_add url.port=%d", url.port);
+    hlog("upstream.flags=%d", mlcf->upstream.upstream->flags);
+    hlog("upstream.host=%s", mlcf->upstream.upstream->host.data);
+    hlog("upstream.port=%d", mlcf->upstream.upstream->port);
     return NGX_CONF_OK;
 }
 
