@@ -251,7 +251,7 @@ ngx_http_memc_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child)
 static char *
 ngx_http_memc_pass(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 {
-    htrace("xxx");
+    htrace("entering ...");
     ngx_http_memc_loc_conf_t  *mlcf = conf;
 
     ngx_str_t                 *value;
