@@ -4,6 +4,7 @@
 #include <sys/time.h>
 #include <time.h>
 #include <errno.h>
+#include <assert.h>
 
 #include <stdio.h>
 #include <stdarg.h>

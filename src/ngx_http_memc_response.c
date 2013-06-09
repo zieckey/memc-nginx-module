@@ -400,7 +400,7 @@ ngx_http_memc_get_cmd_filter(void *data, ssize_t bytes)
 
     u = ctx->request->upstream;
     b = &u->buffer;
-    hlog("u->length=%lu ctx->rest=%lu bytes=[%ld] upstream response : [%s]", u->length, ctx->rest, bytes, hstring(ctx->request->pool, data, bytes));
+    hlog("u->length=%lu ctx->rest=%lu bytes=[%ld] upstream response : [%s] data=%p", u->length, ctx->rest, bytes, hstring(ctx->request->pool, data, bytes), data);
     if (u->length == ctx->rest) {
         if (ngx_strncmp(b->last,
                    ngx_http_memc_end + NGX_HTTP_MEMC_END - ctx->rest,
@@ -414,6 +414,7 @@ ngx_http_memc_get_cmd_filter(void *data, ssize_t bytes)
             u->length = 0;
             ctx->rest = 0;
 
+            hlog("xxxxxxxx 1");
             return NGX_OK;
         }
 
@@ -426,6 +427,7 @@ ngx_http_memc_get_cmd_filter(void *data, ssize_t bytes)
         }
 #endif
 
+            hlog("xxxxxxxx 2");
         return NGX_OK;
     }
 
@@ -452,10 +454,12 @@ ngx_http_memc_get_cmd_filter(void *data, ssize_t bytes)
     ngx_log_debug4(NGX_LOG_DEBUG_HTTP, ctx->request->connection->log, 0,
                    "memcached filter bytes:%z size:%z length:%z rest:%z",
                    bytes, b->last - b->pos, u->length, ctx->rest);
+    hlog("memcached filter bytes:%ld size:%ld length:%ld rest:%ld",
+                bytes, b->last - b->pos, u->length, ctx->rest);
 
     if (bytes <= (ssize_t) (u->length - NGX_HTTP_MEMC_END)) {
         u->length -= bytes;
-        hlog("");
+        hlog("need more data u->length=%lu", u->length);
         return NGX_OK;
     }
 
@@ -471,6 +475,7 @@ ngx_http_memc_get_cmd_filter(void *data, ssize_t bytes)
         u->length = 0;
         ctx->rest = 0;
 
+            hlog("xxxxxxxx 3");
         return NGX_OK;
 #endif
     }
@@ -486,6 +491,7 @@ ngx_http_memc_get_cmd_filter(void *data, ssize_t bytes)
     }
 #endif
 
+    hlog("recv all memcached response data, ");
     return NGX_OK;
 }
 
@@ -507,7 +513,7 @@ ngx_http_memc_process_get_cmd_header(ngx_http_request_t *r)
 
     for (p = u->buffer.pos; p < u->buffer.last; p++) {
         if (*p == LF) { 
-            hlog("found LF : response : [%s]", hstring(r->pool, u->buffer.pos, (unsigned) (u->buffer.last - u->buffer.pos)));
+            hlog("found LF : response : len=%u [%s]",  (unsigned)(u->buffer.last - u->buffer.pos), hstring(r->pool, u->buffer.pos, (unsigned) (u->buffer.last - u->buffer.pos)));
             goto found;
         }
     }
@@ -608,7 +614,7 @@ found:
         u->state->status = NGX_HTTP_OK;
         u->buffer.pos = p + 1;//skip the first line of memcached response 'VALUE key 0 7584'
 
-        hlog("buf=[%s]", hstring(r->pool, u->buffer.pos, u->buffer.last - u->buffer.pos));
+        hlog("recved buf=[%s]", hstring(r->pool, u->buffer.pos, u->buffer.last - u->buffer.pos));
 
         return NGX_OK;
     }
@@ -624,6 +630,7 @@ found:
         u->keepalive = 1;
 #endif
 
+            hlog("xxxxxxxx 5");
         return NGX_OK;
     }
 
