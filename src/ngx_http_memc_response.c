@@ -389,7 +389,8 @@ ngx_http_memc_get_cmd_filter_init(void *data)
 
 ngx_int_t
 ngx_http_memc_get_cmd_filter(void *data, ssize_t bytes)
-{ hlog("entering ...");
+{ 
+    hlog("entering ...");
     ngx_http_memc_ctx_t  *ctx = data;
 
     u_char               *last;
@@ -399,9 +400,8 @@ ngx_http_memc_get_cmd_filter(void *data, ssize_t bytes)
 
     u = ctx->request->upstream;
     b = &u->buffer;
-    char cpybuf[1024] = {0}; memcpy(cpybuf, u->buffer.pos, u->buffer.last - u->buffer.pos); hlog("upstream->buffer->pos=[%s], buflength=%lu", cpybuf, strlen(cpybuf));
+    hlog("u->length=%lu ctx->rest=%lu bytes=[%ld] upstream response : [%s]", u->length, ctx->rest, bytes, hstring(ctx->request->pool, data, bytes));
     if (u->length == ctx->rest) {
-
         if (ngx_strncmp(b->last,
                    ngx_http_memc_end + NGX_HTTP_MEMC_END - ctx->rest,
                    bytes)
@@ -410,6 +410,7 @@ ngx_http_memc_get_cmd_filter(void *data, ssize_t bytes)
             ngx_log_error(NGX_LOG_ERR, ctx->request->connection->log, 0,
                           "memcached sent invalid trailer");
 
+           
             u->length = 0;
             ctx->rest = 0;
 
@@ -454,6 +455,7 @@ ngx_http_memc_get_cmd_filter(void *data, ssize_t bytes)
 
     if (bytes <= (ssize_t) (u->length - NGX_HTTP_MEMC_END)) {
         u->length -= bytes;
+        hlog("");
         return NGX_OK;
     }
 
@@ -490,7 +492,8 @@ ngx_http_memc_get_cmd_filter(void *data, ssize_t bytes)
 
 ngx_int_t
 ngx_http_memc_process_get_cmd_header(ngx_http_request_t *r)
-{ hlog("entering ...");
+{ 
+    hlog("entering ...");
     ngx_http_memc_loc_conf_t        *conf;
     u_char                          *p, *len;
     ngx_str_t                        line;
@@ -500,10 +503,11 @@ ngx_http_memc_process_get_cmd_header(ngx_http_request_t *r)
 
     u = r->upstream;
 
-    hlog("process header: u->length: %u", (unsigned)(u->buffer.last - u->buffer.pos));
+    hlog("process header: recved:%u", (unsigned)(u->buffer.last - u->buffer.pos));
 
     for (p = u->buffer.pos; p < u->buffer.last; p++) {
-        if (*p == LF) { hlog("found LF : response : [%s]", hstring(r->pool, u->buffer.pos, (unsigned) (u->buffer.last - u->buffer.pos)));
+        if (*p == LF) { 
+            hlog("found LF : response : [%s]", hstring(r->pool, u->buffer.pos, (unsigned) (u->buffer.last - u->buffer.pos)));
             goto found;
         }
     }
@@ -517,6 +521,7 @@ found:
     line.len = p - u->buffer.pos - 1;
     line.data = u->buffer.pos;
 
+    hlog("head-line:[%s]", line.data);
     ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "memcached: \"%V\"", &line);
 
@@ -569,6 +574,7 @@ found:
                             ngx_atotm(flags_vv->data, flags_vv->len);
                 }
 
+                hlog("head-line:[%s]", line.data);
                 goto length;
             }
         }
@@ -583,9 +589,11 @@ found:
 
 #if defined(nginx_version) && nginx_version >= 1001004
         u->headers_in.content_length_n = ngx_atoof(len, p - len - 1);
+        hlog("need length content_length_n=%d", (int)u->headers_in.content_length_n);
         if (u->headers_in.content_length_n == -1) {
 #else
         r->headers_out.content_length_n = ngx_atoof(len, p - len - 1);
+        hlog("content_length_n=%d", (int)u->headers_out.content_length_n);
         if (r->headers_out.content_length_n == -1) {
 #endif
             ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
@@ -595,9 +603,12 @@ found:
             return NGX_HTTP_UPSTREAM_INVALID_HEADER;
         }
 
+        hlog("p-pos=%d", (int)(p + 1 - u->buffer.pos));
         u->headers_in.status_n = NGX_HTTP_OK;
         u->state->status = NGX_HTTP_OK;
-        u->buffer.pos = p + 1;
+        u->buffer.pos = p + 1;//skip the first line of memcached response 'VALUE key 0 7584'
+
+        hlog("buf=[%s]", hstring(r->pool, u->buffer.pos, u->buffer.last - u->buffer.pos));
 
         return NGX_OK;
     }
